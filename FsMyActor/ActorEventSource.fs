@@ -3,7 +3,7 @@
 open System.Diagnostics.Tracing
 open System.Fabric
 open System.Threading.Tasks
-open Microsoft.ServiceFabric.Actors
+open Microsoft.ServiceFabric.Actors.Runtime
 
 [<Literal>]
 let MessageEventId = 1
@@ -37,37 +37,21 @@ type internal ActorEventSource =
             this.WriteEvent(MessageEventId, message)
 
     [<NonEvent>]
-    member this.ActorMessage (actor : StatelessActor, message, args : array<'T>) =
+    member this.ActorMessage (actor : Actor, message, args : array<'T>) =
         if this.IsEnabled() then
             let finalMessage = System.String.Format(message, args)
             this.ActorMessage(
                 actor.GetType().ToString(),
                 actor.Id.ToString(),
-                actor.ActorService.ServiceInitializationParameters.CodePackageActivationContext.ApplicationTypeName,
-                actor.ActorService.ServiceInitializationParameters.CodePackageActivationContext.ApplicationName,
-                actor.ActorService.ServiceInitializationParameters.ServiceTypeName,
-                actor.ActorService.ServiceInitializationParameters.ServiceName.ToString(),
-                actor.ActorService.ServiceInitializationParameters.PartitionId,
-                actor.ActorService.ServiceInitializationParameters.InstanceId,
-                FabricRuntime.GetNodeContext().NodeName,
+                actor.ActorService.Context.CodePackageActivationContext.ApplicationTypeName,
+                actor.ActorService.Context.CodePackageActivationContext.ApplicationName,
+                actor.ActorService.Context.ServiceTypeName,
+                actor.ActorService.Context.ServiceName.ToString(),
+                actor.ActorService.Context.PartitionId,
+                actor.ActorService.Context.ReplicaId,
+                actor.ActorService.Context.NodeContext.NodeName,
                 finalMessage)
     
-    [<NonEvent>]
-    member this.ActorMessage (actor : StatefulActorBase, message, args : array<'T>) =
-        if this.IsEnabled() then
-            let finalMessage = System.String.Format(message, args)
-            this.ActorMessage(
-                actor.GetType().ToString(),
-                actor.Id.ToString(),
-                actor.ActorService.ServiceInitializationParameters.CodePackageActivationContext.ApplicationTypeName,
-                actor.ActorService.ServiceInitializationParameters.CodePackageActivationContext.ApplicationName,
-                actor.ActorService.ServiceInitializationParameters.ServiceTypeName,
-                actor.ActorService.ServiceInitializationParameters.ServiceName.ToString(),
-                actor.ActorService.ServiceInitializationParameters.PartitionId,
-                actor.ActorService.ServiceInitializationParameters.ReplicaId,
-                FabricRuntime.GetNodeContext().NodeName,
-                finalMessage)
-
     [<Event(ActorMessageEventId, Level = EventLevel.Informational, Message = "{9}")>]
     member private this.ActorMessage (actorType, actorId, applicationTypeName, applicationName, serviceTypeName, serviceName, partitionId, replicaOrInstanceId, nodeName, message) =
         this.WriteEvent(ActorMessageEventId, actorType,

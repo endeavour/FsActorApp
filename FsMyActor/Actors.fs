@@ -1,7 +1,7 @@
 ﻿module FsActorApp.Actors
 
 open FsMyActor.OperationContracts
-open Microsoft.ServiceFabric.Actors
+open Microsoft.ServiceFabric.Actors.Runtime
 open System.Threading.Tasks
 open System.Runtime.Serialization
 open FsActorApp.ActorEventSource
@@ -18,14 +18,13 @@ module FsMyActorActions =
 open FsMyActorActions
 
 type FsMyActor() = 
-    inherit StatefulActor<ImmutableFsMyActorState>()
+    inherit Actor()
     let emptyTask() = Task.FromResult() :> Task
 
     interface IFsMyActor with
         
-        member this.SetCountAsync() = 
-            this.State <- this.State |> updateCount
-            ActorEventSource.Current.ActorMessage(this, "Updating Count", [||])
-            this.SaveStateAsync()
+        member this.SetCountAsync count = 
+          upcast this.StateManager.AddOrUpdateStateAsync("count", count, fun k v ->
+            if count > v then count else v)
         
-        member this.GetCountAsync() = this.State.Count |> Task.FromResult
+        member this.GetCountAsync() = this.StateManager.GetStateAsync<int>("count")

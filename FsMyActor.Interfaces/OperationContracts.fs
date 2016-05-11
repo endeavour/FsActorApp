@@ -5,5 +5,5 @@ open Microsoft.ServiceFabric.Actors
 
 type IFsMyActor = 
     inherit IActor
-    abstract GetCountAsync : unit -> int Task
-    abstract SetCountAsync : unit -> Task
+    abstract GetCountAsync : unit -> Task<int>
+    abstract SetCountAsync : int -> Task

@@ -2,17 +2,17 @@
 
 open System.Fabric
 open System.Threading
-open Microsoft.ServiceFabric.Actors
+open Microsoft.ServiceFabric.Actors.Runtime
 open FsActorApp.Actors
 open FsActorApp.ActorEventSource
 
 [<EntryPoint>]
 let main argv = 
-    try 
-        use fabricRuntime = FabricRuntime.Create()
-        fabricRuntime.RegisterActor<FsMyActor>()
-        Thread.Sleep(Timeout.Infinite)
+    try       
+      ActorRuntime.RegisterActorAsync<FsMyActor>(fun ctx actorType ->
+        new ActorService(ctx, actorType, fun () -> new FsMyActor() :> ActorBase)).GetAwaiter().GetResult()
+      System.Threading.Thread.Sleep(Timeout.Infinite)
     with e -> 
-        ActorEventSource.Current.ActorHostInitializationFailed(e.ToString())
-        raise (e)
+      ActorEventSource.Current.ActorHostInitializationFailed(e.ToString())
+      reraise ()
     0
